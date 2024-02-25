@@ -1,68 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { Report } from './interfaces';
-
-const mockedData: Report[] = [
-  {
-    id: 1,
-    tag: '@zapatoslola',
-    countOfReports: 10,
-    lastReportDate: '2023-01-01',
-    network: 'Instagram',
-  },
-  {
-    id: 2,
-    tag: '@indumentariapepe',
-    countOfReports: 5,
-    lastReportDate: '2023-01-01',
-    network: 'Facebook',
-  },
-  {
-    id: 3,
-    tag: '@iphones_oliva',
-    countOfReports: 87,
-    lastReportDate: '2023-01-01',
-    network: 'Instagram',
-  },
-  {
-    id: 4,
-    tag: '@cosmeticosmaria',
-    countOfReports: 12,
-    lastReportDate: '2024-02-10',
-    network: 'TikTok',
-  },
-  {
-    id: 5,
-    tag: '@olivarestaurantes',
-    countOfReports: 3,
-    lastReportDate: '2024-02-14',
-    network: 'Twitter',
-  },
-  {
-    id: 6,
-    tag: '@alquileresoliva',
-    countOfReports: 17,
-    lastReportDate: '2024-02-12',
-    network: 'Facebook',
-  },
-  {
-    id: 7,
-    tag: '@deportesoliva',
-    countOfReports: 2,
-    lastReportDate: '2024-02-15',
-    network: 'Instagram',
-  },
-  {
-    id: 8,
-    tag: '@mascotasfelices',
-    countOfReports: 8,
-    lastReportDate: '2024-02-08',
-    network: 'Facebook',
-  },
-];
+import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class ReportService {
-  getReports(): Report[] {
-    return mockedData;
+  prisma = new PrismaClient();
+
+  async getReportedAccounts(): Promise<Report[]> {
+    const reportedAccounts = await this.prisma.reportedAccount.findMany({
+      include: { reports: true, network: true },
+    });
+
+    const response = reportedAccounts.map((reportedAccount) => {
+      return {
+        id: reportedAccount.id,
+        tag: reportedAccount.username,
+        network: reportedAccount.network.name,
+        countOfReports: reportedAccount.reports.filter(
+          (report) => report.reportedAccountId === reportedAccount.id,
+        ).length,
+        lastReportDate: reportedAccount.reports
+          .filter((report) => report.reportedAccountId === reportedAccount.id)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )[0]
+          .createdAt.toISOString(),
+      };
+    });
+
+    return response;
   }
 }

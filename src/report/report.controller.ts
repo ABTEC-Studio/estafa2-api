@@ -7,7 +7,7 @@ export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
   @Get()
-  findAll(): Report[] {
-    return this.reportService.getReports();
+  async findAll(): Promise<Report[]> {
+    return await this.reportService.getReportedAccounts();
   }
 }
